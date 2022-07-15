@@ -33,11 +33,57 @@ module.exports = {
         })
     },
 
+    changePass: (uid, userData) => {
+        return new Promise(async (resolve, reject) => {
+
+            let response = {}
+            let user = await db.get().collection(collection.ADMINS_COLLECTIONS).findOne({ _id: objectId(uid) })
+            userData.Password = await bycrypt.hash(userData.Password, 10)
+
+            if (user) {
+                bycrypt.compare(userData.CurrentPass, user.Password).then((status) => {
+
+                    if (status) {
+                        db.get().collection(collection.ADMINS_COLLECTIONS).updateOne(
+                            { _id: objectId(uid) },
+                            { $set: { Password: userData.Password } }
+                        )
+                        resolve({ status: true })
+                    } else {
+                        console.log('login failed')
+                        resolve({ status: false })
+                    }
+                })
+            } else {
+                // console.log('login failed ')
+                resolve({ status: false })
+            }
+
+        })
+    },
+
+    addAdmin: async (admin_data, callback) => {
+        admin_data.Password = await bycrypt.hash(admin_data.Password, 10)
+
+        db.get().collection(collection.ADMINS_COLLECTIONS).insertOne(admin_data).then((data) => {
+            callback(data.ops[0]._id)
+        })
+    },
+
     getUsers: () => {
         return new Promise(async (resolve, reject) => {
             let userList = await db.get().collection(collection.USERS_COLLECTIONS).find().toArray()
 
             resolve(userList)
+        })
+
+    },
+
+    getAdmins: (loggedUserID) => {
+        return new Promise(async (resolve, reject) => {
+            let adminsList = await db.get().collection(collection.ADMINS_COLLECTIONS).find({ _id: { $ne: objectId(loggedUserID) } }).toArray()
+
+            resolve(adminsList)
         })
 
     },
@@ -83,16 +129,45 @@ module.exports = {
 
     },
 
+    getAdmin: (uid) => {
+        return new Promise(async (resolve, reject) => {
+            let admin = await db.get().collection(collection.ADMINS_COLLECTIONS).findOne({ _id: objectId(uid) })
+
+            resolve(admin)
+        })
+
+    },
+
+
     updateUser: (uid, userData) => {
         return new Promise(async (resolve, reject) => {
-            db.get().collection(collection.USERS_COLLECTIONS).updateOne({ _id: objectId(uid) }, {
+            db.get().collection(collection.USERS_COLLECTIONS).findOneAndUpdate({ _id: objectId(uid) }, {
                 $set: {
                     "Username": userData.Username,
                     "Email": userData.Email,
                     "Phone": userData.Phone
                 }
-            }).then((response) => {
-                resolve()
+            }, { returnDocument: 'after' }
+            ).then((response) => {
+                resolve(response)
+            })
+        })
+
+    },
+
+    updateAdmin: (uid, userData) => {
+        return new Promise(async (resolve, reject) => {
+
+            db.get().collection(collection.ADMINS_COLLECTIONS).findOneAndUpdate({ _id: objectId(uid) }, {
+                $set: {
+                    "Username": userData.Username,
+                    "Email": userData.Email,
+                    "Type": userData.Type,
+                    "Super_Admin": userData.Super_Admin
+                }
+            }, { returnDocument: 'after' }
+            ).then((response) => {
+                resolve(response)
             })
         })
 
@@ -164,11 +239,51 @@ module.exports = {
         })
     },
 
+    removeUser: (uid) => {
+        return new Promise(async (resolve, reject) => {
+            let userCourses = await db.get().collection(collection.USER_ENROLLED_COLLECTIONS).findOne({ user: objectId(uid) })
+
+            if (userCourses) {
+                await db.get().collection(collection.USERS_COLLECTIONS).removeOne({ _id: objectId(uid) })
+                await db.get().collection(collection.USER_ENROLLED_COLLECTIONS).removeOne({ user: objectId(uid) })
+                resolve()
+
+            } else {
+                await db.get().collection(collection.USERS_COLLECTIONS).removeOne({ _id: objectId(uid) })
+
+                resolve()
+            }
+
+        })
+    },
+
+    removeAdmin: (uid) => {
+        return new Promise(async (resolve, reject) => {
+            await db.get().collection(collection.ADMINS_COLLECTIONS).removeOne({ _id: objectId(uid) })
+            resolve()
+
+        })
+    },
+
     deleteLecture: (courseId, videoId) => {
         return new Promise((resolve, reject) => {
             db.get().collection(collection.COURSES_COLLECTIONS).updateOne(
                 { _id: objectId(courseId) },
                 { $pull: { Lectures: { VID: videoId } } },
+                false, // Upsert
+                true, // Multi
+
+            ).then((response) => {
+                resolve(response)
+            })
+        })
+    },
+
+    leaveCourse: (courseId, uid) => {
+        return new Promise((resolve, reject) => {
+            db.get().collection(collection.USER_ENROLLED_COLLECTIONS).updateOne(
+                { user: objectId(uid) },
+                { $pull: { courses_enrolled: { course: objectId(courseId) } } },
                 false, // Upsert
                 true, // Multi
 

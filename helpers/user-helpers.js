@@ -50,11 +50,40 @@ module.exports = {
         })
     },
 
-    enrollCourse: (courseId, userId, orderId) => {
+    
+    changePass: (uid, userData) => {
+        return new Promise(async (resolve, reject) => {
+
+            let response = {}
+            let user = await db.get().collection(collection.USERS_COLLECTIONS).findOne({ _id: objectId(uid) })
+            userData.Password = await bycrypt.hash(userData.Password, 10)
+
+            if (user) {
+                bycrypt.compare(userData.CurrentPass, user.Password).then((status) => {
+
+                    if (status) {
+                        db.get().collection(collection.USERS_COLLECTIONS).updateOne(
+                            { _id: objectId(uid) },
+                            { $set: { Password: userData.Password } }
+                        )
+                        resolve({ status: true })
+                    } else {
+                        console.log('login failed')
+                        resolve({ status: false })
+                    }
+                })
+            } else {
+                // console.log('login failed ')
+                resolve({ status: false })
+            }
+
+        })
+    },
+
+    enrollCourse: (courseId, userId) => {
 
         let courseObject = {
             course: objectId(courseId),
-            orderId: orderId
         }
 
         return new Promise(async (resolve, reject) => {

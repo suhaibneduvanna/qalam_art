@@ -1,0 +1,50 @@
+<div class="main-panel">
+    <div class="content-wrapper">
+        <div class="row">
+            <div class="col-12 grid-margin stretch-card">
+                <div class="card">
+                    <div class="card-body">
+                        <br>
+                        <div class="d-flex justify-content-center">
+                            <h4 class="card-title">Edit Admin user</h4>
+                        </div>
+
+                        {{!-- <p class="card-description">
+                            Basic form elements
+                        </p> --}}
+
+                        <br>
+                        <form id="update_admin_form" class="forms-sample">
+                            <div class="form-group">
+                                <input hidden type="text" name="id" id="uid" value="{{adminData._id}}">
+                                <label for="cstitle">Username</label>
+                                <input value="{{adminData.Username}}" name="Username" type="text" class="form-control"
+                                    id="no" placeholder="Username">
+                            </div>
+                            <div class="form-group">
+                                <label for="cstitle">Email</label>
+                                <input value="{{adminData.Email}}" name="Email" type="email" class="form-control"
+                                    id="title" placeholder="Email">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputEmail3">Admin Type</label>
+                                <select  required name="Type" id="type" class="form-control">
+                                    <option selected > {{adminData.Type}}</option>
+                                    <option value="Super">Super</option>
+                                    <option value="Normal">Normal</option>
+                                </select>
+
+                            </div>
+
+                            <div class="d-flex justify-content-center">
+                                <button type="submit" class="btn btn-primary mr-2">Submit</button>
+
+                            </div>
+                        </form>
+
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>

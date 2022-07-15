@@ -24,6 +24,17 @@ router.get('/', verifyLogin, (req, res) => {
     res.redirect('/user/dashboard')
 });
 
+router.post('/edit-user', verifyLogin, (req, res) => {
+    let uid = req.body.id;
+
+    adminHelpers.updateUser(uid, req.body).then((updatedUser) => {
+        req.session.user = updatedUser.value
+
+        res.redirect('/user/profile')
+    })
+
+
+});
 
 router.get('/dashboard', verifyLogin, async (req, res) => {
     let user = req.session.user
@@ -37,7 +48,7 @@ router.post('/login', (req, res) => {
 
     userHelpers.loginFunction(req.body).then((response) => {
         if (response.status) {
-
+            // console.log(response.user)
             req.session.loggedIn = true
             req.session.user = response.user
             res.redirect('/user/dashboard')
@@ -112,6 +123,14 @@ router.get('/my-courses', verifyLogin, (req, res) => {
 
 });
 
+router.get('/my-orders', verifyLogin, (req, res) => {
+    let user = req.session.user
+
+
+    res.render('user/my-orders', { user });
+
+
+});
 
 router.get('/course-details/', verifyLogin, (req, res) => {
     let courseId = req.query.id
@@ -157,6 +176,25 @@ router.post('/confirm_payment', verifyLogin, (req, res) => {
     })
 });
 
+router.get('/change-password', verifyLogin, (req, res) => {
+    let user = req.session.user
+
+
+    res.render('user/change_pass', { user });
+
+
+});
+
+router.post('/change-password', verifyLogin, (req, res) => {
+    let uid = req.body.id;
+    delete req.body.CnfPassword;
+
+    userHelpers.changePass(uid, req.body).then((status) => {
+        res.json(status)
+    })
+
+
+});
 
 
 

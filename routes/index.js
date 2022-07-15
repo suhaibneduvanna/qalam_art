@@ -1,10 +1,23 @@
 var express = require('express');
 var router = express.Router();
 var userHelpers = require('../helpers/user-helpers')
+var adminHelpers = require('../helpers/admin-helpers')
 
+verifyLogin = (req, res, next) => {
+
+  if (req.session.loggedIn) {
+    next()
+  } else {
+    res.redirect('/login')
+  }
+
+
+}
 /* GET users listing. */
-router.get('/', function (req, res, next) {
-  res.render('index', { layout: "main_layout.hbs" })
+router.get('/', async function (req, res, next) {
+
+  let courseList = await adminHelpers.getCourses()
+  res.render('index', { layout: "main_layout.hbs", courseList })
 });
 
 router.get('/admin-login', (req, res) => {
@@ -16,8 +29,15 @@ router.get('/admin-login', (req, res) => {
   }
 });
 
+router.get('/join', verifyLogin, (req, res) => {
+  res.redirect('/user/dashboard')
+
+})
+
 router.get('/login', (req, res) => {
+
   res.render('user/user_login', { layout: "login.hbs" });
+
 });
 
 router.get('/register', (req, res) => {

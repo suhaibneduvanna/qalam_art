@@ -34,9 +34,9 @@
                                         <th>
                                             Email
                                         </th>
-                                        <th>
+                                        {{!-- <th>
                                             Progress
-                                        </th>
+                                        </th> --}}
                                         <th>
                                             Edit
                                         </th>
@@ -47,9 +47,9 @@
                                 </thead>
                                 <tbody>
                                     {{#each userList}}
-                                    <tr>
+                                    <tr id="{{this._id}}">
                                         <td class="py-1">
-                                            <img src="../../images/faces/face1.jpg" alt="image" />
+                                            <img src="../../images/faces/user.png" alt="image" />
                                         </td>
                                         <td>
                                             {{this.UID}}
@@ -60,19 +60,20 @@
                                         <td>
                                             {{this.Email}}
                                         </td>
-                                        <td>
+                                        {{!-- <td>
                                             <div class="progress">
                                                 <div class="progress-bar bg-success" role="progressbar"
                                                     style="width: 25%" aria-valuenow="25" aria-valuemin="0"
                                                     aria-valuemax="100"></div>
                                             </div>
+                                        </td> --}}
+                                        <td>
+                                            <a href="/admin/edit-user?id={{this._id}}"
+                                                class="btn btn-primary p-2 pl-3 pr-3">Edit</a>
                                         </td>
                                         <td>
-                                            <a href="/admin/edit-user?id={{this._id}}" class="btn btn-primary">Edit</a>
-                                        </td>
-                                        <td>
-                                            <a href="/admin/delete-user?id={{this._id}}"
-                                                class="btn btn-danger">Delete</a>
+                                            <a onclick="removeUser('{{this._id}}')"
+                                                class="btn btn-danger p-2 ">Delete</a>
 
                                         </td>
                                     </tr>

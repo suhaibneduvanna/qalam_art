@@ -16,7 +16,7 @@
                         <br>
                         <form id="update_user_form" class="forms-sample">
                             <div class="form-group">
-                                <input hidden type="text" name="id" id="id" value="{{userData._id}}">
+                                <input hidden type="text" name="id" id="uid" value="{{userData._id}}">
                                 <label for="cstitle">Username</label>
                                 <input value="{{userData.Username}}" name="Username" type="text" class="form-control"
                                     id="no" placeholder="Username">
@@ -50,10 +50,7 @@
 
                                 </p>
                             </div>
-                            <a href="/admin/enroll" type="button" class="btn btn-primary btn-icon-text">
-                                <i class="ti-plus btn-icon-prepend"></i>
-                                Enroll
-                            </a>
+                            
                         </div>
 
 
@@ -91,7 +88,7 @@
                                         </td>
 
                                         <td>
-                                            <a href="/admin/dismiss-user?id={{this._id}}"
+                                            <a id="{{this._id}}" onclick="leaveCourse('{{this._id}}')"
                                                 class="btn btn-danger p-2">Leave</a>
                                         </td>
 
@@ -109,7 +106,7 @@
                                         </td>
 
                                         <td>
-                                            <a href="/admin/admit-user?id={{this._id}}"
+                                            <a id="{{this._id}}" onclick="admitUser('{{this._id}}')"
                                                 class="btn btn-success p-2">Admit</a>
                                         </td>
 

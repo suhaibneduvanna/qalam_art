@@ -4,12 +4,12 @@
             <div class="col-lg-12 grid-margin stretch-card">
                 <div class="card">
                     <div class="card-body">
-                        <div class="row d-flex justify-content-between p-3">
+                        <div class="row d-flex justify-content-center pt-3">
                             <div>
-                                <h4 class="card-title pt-2">All Courses</h4>
-                                <p class="card-description">
-
-                                </p>
+                                <h4 class="card-title pt-2">My Courses</h4>
+                                <hr class="bg-primary" style="width: 50%; border: none;height: 2px;">
+                               
+                            
                             </div>
                             {{!-- <a href="/admin/add-course" class="btn btn-primary btn-icon-text">
                                 <i class="ti-plus btn-icon-prepend"></i>
@@ -19,7 +19,7 @@
 
 
                         <div class="row d-flex justify-content-center">
-
+                            {{#if coursesList}}
                             {{#each coursesList}}
                             {{#each this.course_details}}
 
@@ -29,7 +29,7 @@
                                         alt="Card image cap">
                                     <div class="card-body">
                                         <h5 class="card-title">{{this.Title}}</h5>
-                                        
+
                                     </div>
 
 
@@ -37,6 +37,10 @@
                             </a>
                             {{/each}}
                             {{/each}}
+                            {{else}}
+                            <p>You have not yet enrolled in any courses</p>
+                            {{/if}}
+
 
 
 

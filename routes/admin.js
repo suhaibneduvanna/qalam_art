@@ -2,13 +2,7 @@ var express = require('express');
 var router = express.Router();
 var adminHelpers = require("../helpers/admin-helpers")
 var userHelpers = require("../helpers/user-helpers")
-
 var fs = require('fs');
-const { redirect } = require('express/lib/response');
-const session = require('express-session');
-const axios = require('axios');
-
-var FormData = require('form-data');
 
 
 verifyLogin = (req, res, next) => {
@@ -17,7 +11,23 @@ verifyLogin = (req, res, next) => {
     next()
   } else {
     res.redirect('/admin-login')
+
   }
+
+
+}
+
+verify_super_admin = (req, res, next) => {
+  if (req.session.loggedIn && req.session.user.Admin) {
+    if (req.session.user.Super_Admin) {
+      next()
+    } else {
+      res.send("You are not authorized to access this page")
+    }
+  } else {
+    res.redirect('/admin-login')
+  }
+
 
 
 }
@@ -36,6 +46,15 @@ router.get('/courses', verifyLogin, (req, res) => {
 
     res.render('admin/courses', { coursesList, user });
   })
+
+});
+
+router.get('/profile', verifyLogin, (req, res) => {
+  let user = req.session.user
+
+
+  res.render('admin/profile', { user });
+
 
 });
 
@@ -85,12 +104,19 @@ router.get('/add-user', verifyLogin, (req, res) => {
 
 });
 
+router.get('/add-admin', verify_super_admin, (req, res) => {
+  let user = req.session.user
+
+  res.render('admin/add-admin', { user });
+
+});
+
 router.get('/logout', (req, res) => {
   req.session.destroy();
   res.redirect('/admin-login')
 });
 
-router.get('/users', (req, res) => {
+router.get('/users', verifyLogin, (req, res) => {
   let user = req.session.user;
 
   adminHelpers.getUsers().then((userList) => {
@@ -100,6 +126,18 @@ router.get('/users', (req, res) => {
 
 
 });
+
+router.get('/admins', verify_super_admin, (req, res) => {
+  let user = req.session.user;
+
+  adminHelpers.getAdmins(user._id).then((adminsList) => {
+
+    res.render('admin/admins', { adminsList, user });
+  })
+
+
+});
+
 router.get('/my-courses', verifyLogin, (req, res) => {
   let user = req.session.user
 
@@ -108,6 +146,7 @@ router.get('/my-courses', verifyLogin, (req, res) => {
   })
 
 });
+
 router.get('/edit-user/', verifyLogin, async (req, res) => {
   let user = req.session.user;
   let uid = req.query.id;
@@ -123,10 +162,111 @@ router.get('/edit-user/', verifyLogin, async (req, res) => {
 
 });
 
+router.get('/change-password', verifyLogin, (req, res) => {
+  let user = req.session.user
+
+
+  res.render('admin/change_pass', { user });
+
+
+});
+
+router.get('/edit-admin/', verifyLogin, async (req, res) => {
+  let user = req.session.user;
+  let uid = req.query.id;
+
+  adminHelpers.getAdmin(uid).then((adminData) => {
+
+    res.render('admin/edit-admin', { adminData, user });
+  })
+
+
+});
+
+router.get('/admit-user', verifyLogin, (req, res) => {
+  // let courseId = req.body.id
+  // adminHelpers.getCourseDetails(courseId).then((course) => {
+  //     res.render('user/course-details', { course });
+  // })
+
+  let course_id = req.query.course_id;
+  let uid = req.query.uid;
+
+
+  userHelpers.enrollCourse(course_id, uid).then((order) => {
+    // console.log(order)
+    res.json({ status: true })
+  })
+});
+
+router.get('/leave-course', verifyLogin, (req, res) => {
+  // let courseId = req.body.id
+  // adminHelpers.getCourseDetails(courseId).then((course) => {
+  //     res.render('user/course-details', { course });
+  // })
+
+  let course_id = req.query.course_id;
+  let uid = req.query.uid;
+
+
+  adminHelpers.leaveCourse(course_id, uid).then((order) => {
+    // console.log(order)
+    res.json({ status: true })
+  })
+});
+
 router.post('/edit-user', verifyLogin, (req, res) => {
   let uid = req.body.id;
 
   adminHelpers.updateUser(uid, req.body).then(() => {
+    res.json({ status: true })
+  })
+
+
+});
+
+router.post('/edit-admin', verifyLogin, (req, res) => {
+  let uid = req.body.id;
+  if (req.body.Type == "Super") {
+    req.body.Super_Admin = true
+
+  } else {
+    req.body.Super_Admin = false
+
+  }
+  adminHelpers.updateAdmin(uid, req.body).then(() => {
+    res.json({ status: true })
+  })
+
+
+});
+
+router.post('/change-password', verifyLogin, (req, res) => {
+  let uid = req.body.id;
+  delete req.body.CnfPassword;
+
+  adminHelpers.changePass(uid, req.body).then((status) => {
+    res.json(status)
+  })
+
+
+});
+
+
+router.get('/remove-user', verifyLogin, (req, res) => {
+  let uid = req.query.uid;
+
+  adminHelpers.removeUser(uid).then(() => {
+    res.json({ status: true })
+  })
+
+
+});
+
+router.get('/remove-admin', verify_super_admin, (req, res) => {
+  let uid = req.query.uid;
+
+  adminHelpers.removeAdmin(uid).then(() => {
     res.json({ status: true })
   })
 
@@ -144,18 +284,32 @@ router.post('/add-user', verifyLogin, (req, res) => {
 
 })
 
+router.post('/add-admin', verify_super_admin, (req, res) => {
+  req.body.Admin = true
+
+  if (req.body.Type == "Super") {
+    req.body.Super_Admin = true
+
+  } else {
+    req.body.Super_Admin = false
+
+  }
+
+  delete req.body.CnfPassword
+  adminHelpers.addAdmin(req.body).then((response) => {
+    res.json({ status: true })
+
+  })
+
+})
 
 
 router.post('/login', (req, res) => {
-
   adminHelpers.loginFunction(req.body).then((response) => {
     if (response.status) {
-
       req.session.loggedIn = true
       req.session.user = response.user
       res.redirect('/admin/dashboard')
-
-
     } else {
       req.session.loginError = "Invalid username or password"
       res.redirect('/admin-login')
@@ -164,20 +318,23 @@ router.post('/login', (req, res) => {
 
 })
 
-router.get('/dashboard', verifyLogin, (req, res) => {
+router.get('/dashboard', verifyLogin, async (req, res) => {
   let user = req.session.user
   console.log(user)
-  res.render('admin/dashboard', { user });
+  let coursesList = await adminHelpers.getCourses()
+  let usersList = await adminHelpers.getUsers()
+
+  res.render('admin/dashboard', { user, coursesList, usersList });
 });
 
 
-router.get('/add-course', (req, res) => {
+router.get('/add-course', verifyLogin, (req, res) => {
   let user = req.session.user;
 
   res.render('admin/add-course', { user })
 })
 
-router.post('/add-course', (req, res) => {
+router.post('/add-course', verifyLogin, (req, res) => {
 
   adminHelpers.addCourse(req.body, (id) => {
     let image = req.files.CsThumbnail
@@ -196,7 +353,7 @@ router.post('/add-course', (req, res) => {
 
 
 
-router.get('/edit-course/', async (req, res) => {
+router.get('/edit-course/', verifyLogin, async (req, res) => {
   let courseId = req.query.id
   let user = req.session.user;
   let course = await adminHelpers.getCourseDetails(courseId)
@@ -204,7 +361,7 @@ router.get('/edit-course/', async (req, res) => {
 
 })
 
-router.post('/edit-course', (req, res) => {
+router.post('/edit-course', verifyLogin, (req, res) => {
   let courseId = req.body.id
 
   adminHelpers.updateCourse(courseId, req.body).then(() => {
@@ -230,7 +387,7 @@ router.post('/edit-course', (req, res) => {
   })
 })
 
-router.get('/delete-course/', (req, res) => {
+router.get('/delete-course/', verifyLogin, (req, res) => {
   let courseId = req.query.id
 
   adminHelpers.deleteCourse(courseId).then((response) => {
@@ -242,7 +399,7 @@ router.get('/delete-course/', (req, res) => {
 })
 
 
-router.get('/add-lecture', (req, res) => {
+router.get('/add-lecture', verifyLogin, (req, res) => {
   let user = req.session.user
   adminHelpers.getCourses().then((coursesList) => {
     res.render('admin/add-lecture', { coursesList, user })
@@ -250,7 +407,7 @@ router.get('/add-lecture', (req, res) => {
   })
 })
 
-router.post('/add-lecture', async (req, res) => {
+router.post('/add-lecture', verifyLogin, async (req, res) => {
   let course_id = req.body.Course
   delete req.body.Course
 
@@ -260,80 +417,6 @@ router.post('/add-lecture', async (req, res) => {
 
 })
 
-
-router.get('/add-marks/', (req, res) => {
-  let studentId = req.query.id
-
-  res.render('admin/add-marks', { studentId })
-})
-
-router.post('/add-marks/', (req, res) => {
-  let studentId = req.query.id
-  let marks = req.body;
-
-  studentHelper.addMarks(marks, studentId).then((data) => {
-    res.redirect('/admin/search-student')
-  })
-
-})
-
-
-
-router.get('/view-student/', async (req, res) => {
-  let studentId = req.query.id
-  let student = await studentHelper.getStudentDetails(studentId)
-
-  let marks = await studentHelper.getMarks(studentId)
-  res.render('admin/view-student', { student, marks })
-})
-
-router.get('/view-marks/', async (req, res) => {
-
-  let studentId = req.query.id;
-  let marks = await studentHelper.getMarks(studentId)
-
-  res.json(marks)
-
-
-})
-
-
-router.post('/edit-marks/', async (req, res) => {
-  let marks = req.body;
-  let studentId = req.body.studentId
-  let subject = req.body.Subject
-  console.log(marks)
-  if (Array.isArray(subject)) {
-    let arrayofMarks = []
-    for (i = 0; i < subject.length; i++) {
-
-      let sub = marks.Subject[i]
-      let mark = marks.Mark[i]
-      let object = {
-        Semester: marks.Semester,
-        Subject: sub,
-        Mark: mark
-
-      }
-
-      arrayofMarks.push(object)
-
-    }
-    studentHelper.editMarks(studentId, arrayofMarks)
-    res.json({ status: true })
-
-
-  } else {
-
-    studentHelper.editMarks(studentId, marks)
-    res.json({ status: true })
-
-  }
-
-
-  // console.log(array)
-
-})
 
 
 

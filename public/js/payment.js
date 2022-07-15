@@ -1,6 +1,8 @@
 
-var price ;
+var price;
 var course_id;
+var email;
+var mobile;
 
 var orderId;
 
@@ -8,6 +10,9 @@ var orderId;
 function initiatePayment() {
     course_id = document.getElementById("course_id").value
     price = document.getElementById("course_price").value * 100
+    email = document.getElementById("email").value
+    mobile = document.getElementById("phone").value
+
     $.ajax({
         url: "/user/init_payment",
         type: "post",
@@ -52,13 +57,19 @@ function razorpayPayment(order) {
         "amount": order.amount, // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
         "currency": "INR",
         "name": "Qalamart",
-        "description": "Test Transaction",
+        "description": order.id,
         "image": "http://localhost:3000/images/logo.svg",
         "order_id": order.id, //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
         "handler": function (response) {
             response.course_id = course_id;
             response.price = price;
             confirmPayment(response)
+        },
+
+        "prefill": {
+            // "name": "Gaurav Kumar",
+            "email": email,
+            "contact": mobile
         },
 
         "theme": {
